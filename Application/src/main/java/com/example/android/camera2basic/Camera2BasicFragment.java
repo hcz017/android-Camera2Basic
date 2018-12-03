@@ -165,6 +165,7 @@ public class Camera2BasicFragment extends Fragment
      * An {@link AutoFitTextureView} for camera preview.
      */
     private AutoFitTextureView mTextureView;
+    private TextureView mSubTextureView;
 
     /**
      * A {@link CameraCaptureSession } for camera preview.
@@ -192,6 +193,12 @@ public class Camera2BasicFragment extends Fragment
             // This method is called when the camera is opened.  We start camera preview here.
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
+            // to ensure surface available
+            try{
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             createCameraPreviewSession();
         }
 
@@ -246,6 +253,7 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
+            Log.d(TAG, "onImageAvailable: ");
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
         }
 
@@ -432,6 +440,7 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        mSubTextureView = view.findViewById(R.id.sub_cam_view);
     }
 
     @Override
@@ -449,7 +458,7 @@ public class Camera2BasicFragment extends Fragment
         // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
         // a camera and start preview from here (otherwise, we wait until the surface is ready in
         // the SurfaceTextureListener).
-        if (mTextureView.isAvailable()) {
+        if (mTextureView.isAvailable() && mSubTextureView.isAvailable()) {
             openCamera(mTextureView.getWidth(), mTextureView.getHeight());
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
@@ -495,9 +504,17 @@ public class Camera2BasicFragment extends Fragment
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
+            Log.d(TAG, "setUpCameraOutputs: manager.getCameraIdList(): "
+                    + manager.getCameraIdList().length);
             for (String cameraId : manager.getCameraIdList()) {
+                cameraId = "0";
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
+
+                Log.d(TAG, "setUpCameraOutputs: is RAW output support: " +
+                        CameraUtil.isCapSupport(characteristics, CameraUtil.RWA_CAP));
+                Log.d(TAG, "setUpCameraOutputs: is DEPTH output support: " +
+                        CameraUtil.isCapSupport(characteristics, CameraUtil.DEPTH_CAP));
 
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
@@ -509,6 +526,10 @@ public class Camera2BasicFragment extends Fragment
                         CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                 if (map == null) {
                     continue;
+                }
+                String[][] supportFormatStr = CameraUtil.getOutputFormat(map.getOutputFormats());
+                for (String format: supportFormatStr[0]){
+                    Log.d(TAG, "setUpCameraOutputs: support output format: " + format);
                 }
 
                 // For still image captures, we use the largest available size.
@@ -682,17 +703,28 @@ public class Camera2BasicFragment extends Fragment
 
             // We configure the size of default buffer to be the size of camera preview we want.
             texture.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
+            Log.d(TAG, "createCameraPreviewSession: mPreview Size: " + mPreviewSize.toString());
 
             // This is the output Surface we need to start preview.
             Surface surface = new Surface(texture);
+
+            SurfaceTexture subTexture = mSubTextureView.getSurfaceTexture();
+            assert subTexture != null;
+
+            // We configure the size of default buffer to be the size of camera preview we want.
+            subTexture.setDefaultBufferSize(480, 320);
+
+            // This is the output Surface we need to start preview.
+            Surface subSurface = new Surface(subTexture);
 
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mPreviewRequestBuilder.addTarget(surface);
+            mPreviewRequestBuilder.addTarget(subSurface);
 
             // Here, we create a CameraCaptureSession for camera preview.
-            mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
+            mCameraDevice.createCaptureSession(Arrays.asList(surface, subSurface, mImageReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
 
                         @Override

@@ -24,6 +24,19 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true" />
 
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true">
+
+        <TextureView
+            android:id="@+id/sub_cam_view"
+            android:layout_width="150dp"
+            android:layout_height="200dp"/>
+    </FrameLayout>
+
     <FrameLayout
         android:id="@+id/control"
         android:layout_width="match_parent"
