@@ -238,6 +238,7 @@ public class Camera2BasicFragment extends Fragment
      * An {@link ImageReader} that handles still image capture.
      */
     private ImageReader mImageReader;
+    private ImageReader mRawImageReader;
 
     /**
      * This is the output file for our picture.
@@ -250,10 +251,12 @@ public class Camera2BasicFragment extends Fragment
      */
     private final ImageReader.OnImageAvailableListener mOnImageAvailableListener
             = new ImageReader.OnImageAvailableListener() {
+        int i = 1;
 
         @Override
         public void onImageAvailable(ImageReader reader) {
             Log.d(TAG, "onImageAvailable: ");
+            mFile = new File(getActivity().getExternalFilesDir(null), i++ + "pic.jpg");
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
         }
 
@@ -541,6 +544,14 @@ public class Camera2BasicFragment extends Fragment
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
 
+                Size rawLargest = Collections.max(
+                        Arrays.asList(map.getOutputSizes(ImageFormat.RAW_SENSOR)),
+                        new CompareSizesByArea());
+                mRawImageReader = ImageReader.newInstance(rawLargest.getWidth(), rawLargest.getHeight(),
+                        ImageFormat.RAW_SENSOR, /*maxImages*/2);
+                mRawImageReader.setOnImageAvailableListener(
+                        mOnImageAvailableListener, mBackgroundHandler);
+
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
                 int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
@@ -663,6 +674,10 @@ public class Camera2BasicFragment extends Fragment
                 mImageReader.close();
                 mImageReader = null;
             }
+            if (null != mRawImageReader) {
+                mRawImageReader.close();
+                mRawImageReader = null;
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
         } finally {
@@ -721,10 +736,10 @@ public class Camera2BasicFragment extends Fragment
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mPreviewRequestBuilder.addTarget(surface);
-            mPreviewRequestBuilder.addTarget(subSurface);
+//            mPreviewRequestBuilder.addTarget(subSurface);
 
             // Here, we create a CameraCaptureSession for camera preview.
-            mCameraDevice.createCaptureSession(Arrays.asList(surface, subSurface, mImageReader.getSurface()),
+            mCameraDevice.createCaptureSession(Arrays.asList(surface, mRawImageReader.getSurface(), mImageReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
 
                         @Override
@@ -853,6 +868,7 @@ public class Camera2BasicFragment extends Fragment
             final CaptureRequest.Builder captureBuilder =
                     mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(mImageReader.getSurface());
+            captureBuilder.addTarget(mRawImageReader.getSurface());
 
             // Use the same AE and AF modes as the preview.
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
@@ -963,6 +979,7 @@ public class Camera2BasicFragment extends Fragment
         ImageSaver(Image image, File file) {
             mImage = image;
             mFile = file;
+            Log.d(TAG, "Saved: " + mFile.toString());
         }
 
         @Override
