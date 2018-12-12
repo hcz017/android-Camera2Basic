@@ -193,11 +193,14 @@ public class Camera2BasicFragment extends Fragment
             // This method is called when the camera is opened.  We start camera preview here.
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
+
             // to ensure surface available
-            try{
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if (Config.SecCamCfg.ADD_SEC_PREVIEW){
+                try{
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
             createCameraPreviewSession();
         }
@@ -238,7 +241,7 @@ public class Camera2BasicFragment extends Fragment
      * An {@link ImageReader} that handles still image capture.
      */
     private ImageReader mImageReader;
-    private ImageReader mRawImageReader;
+    private ImageReader mSecImageReader;
 
     /**
      * This is the output file for our picture.
@@ -262,6 +265,18 @@ public class Camera2BasicFragment extends Fragment
 
     };
 
+    private final ImageReader.OnImageAvailableListener mOnSecImageAvailableListener
+            = new ImageReader.OnImageAvailableListener() {
+        int i = 1;
+
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            Log.d(TAG, "onImageAvailable: second image");
+            mFile = new File(getActivity().getExternalFilesDir(null), i++ + "pic.sec");
+//            mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
+        }
+
+    };
     /**
      * {@link CaptureRequest.Builder} for the camera preview
      */
@@ -507,10 +522,11 @@ public class Camera2BasicFragment extends Fragment
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
-            Log.d(TAG, "setUpCameraOutputs: manager.getCameraIdList(): "
+            Log.d(TAG, "setUpCameraOutputs: manager.getCameraIdList() size: "
                     + manager.getCameraIdList().length);
             for (String cameraId : manager.getCameraIdList()) {
-                cameraId = "0";
+                // override camera id for debug
+                cameraId = Config.MAIN_CAM_ID;
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
 
@@ -522,7 +538,7 @@ public class Camera2BasicFragment extends Fragment
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                    continue;
+//                    continue;
                 }
 
                 StreamConfigurationMap map = characteristics.get(
@@ -532,25 +548,38 @@ public class Camera2BasicFragment extends Fragment
                 }
                 String[][] supportFormatStr = CameraUtil.getOutputFormat(map.getOutputFormats());
                 for (String format: supportFormatStr[0]){
-                    Log.d(TAG, "setUpCameraOutputs: support output format: " + format);
+                    Log.d(TAG, "setUpCameraOutputs: getOutputFormat: " + format);
                 }
 
                 // For still image captures, we use the largest available size.
                 Size largest = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
+                if (Config.USE_FIXED_PIC_SIZE) {
+                    largest = Config.getFixedPictureSize();
+                    Log.d(TAG, "setUpCameraOutputs: using fixed picture size, w/h: "
+                            + largest.getWidth() + "/" + largest.getHeight());
+                }
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
                         ImageFormat.JPEG, /*maxImages*/2);
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
 
-                Size rawLargest = Collections.max(
-                        Arrays.asList(map.getOutputSizes(ImageFormat.RAW_SENSOR)),
-                        new CompareSizesByArea());
-                mRawImageReader = ImageReader.newInstance(rawLargest.getWidth(), rawLargest.getHeight(),
-                        ImageFormat.RAW_SENSOR, /*maxImages*/2);
-                mRawImageReader.setOnImageAvailableListener(
-                        mOnImageAvailableListener, mBackgroundHandler);
+                if (Config.MainCamCfg.TAKE_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
+                    int secFormat = Config.MainCamCfg.SEC_FORMAT;
+//                    Size secLargest = Collections.max(
+//                            Arrays.asList(map.getOutputSizes(secFormat)),
+//                            new CompareSizesByArea());
+
+                    // xiaomi 8
+//                    Size secLargest = new Size(2016, 1512);
+                    // sdm 670
+                    Size secLargest = new Size(640, 480);
+                    mSecImageReader = ImageReader.newInstance(secLargest.getWidth(),
+                            secLargest.getHeight(), secFormat, /*maxImages*/2);
+                    mSecImageReader.setOnImageAvailableListener(
+                            mOnSecImageAvailableListener, mBackgroundHandler);
+                }
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
@@ -604,6 +633,11 @@ public class Camera2BasicFragment extends Fragment
                         rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
                         maxPreviewHeight, largest);
 
+                if(Config.USE_FIXED_PRE_SIZE){
+                    mPreviewSize = Config.getFixedPreviewSize();
+                    Log.d(TAG, "setUpCameraOutputs: using fixed preview size, w/h: "
+                            + mPreviewSize.getWidth() + "/" + mPreviewSize.getHeight());
+                }
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
                 int orientation = getResources().getConfiguration().orientation;
                 if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -648,6 +682,7 @@ public class Camera2BasicFragment extends Fragment
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
+            Log.d(TAG, "openCamera: camera id: " + mCameraId);
             manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -674,9 +709,9 @@ public class Camera2BasicFragment extends Fragment
                 mImageReader.close();
                 mImageReader = null;
             }
-            if (null != mRawImageReader) {
-                mRawImageReader.close();
-                mRawImageReader = null;
+            if (null != mSecImageReader) {
+                mSecImageReader.close();
+                mSecImageReader = null;
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
@@ -723,23 +758,32 @@ public class Camera2BasicFragment extends Fragment
             // This is the output Surface we need to start preview.
             Surface surface = new Surface(texture);
 
-            SurfaceTexture subTexture = mSubTextureView.getSurfaceTexture();
-            assert subTexture != null;
-
-            // We configure the size of default buffer to be the size of camera preview we want.
-            subTexture.setDefaultBufferSize(480, 320);
-
-            // This is the output Surface we need to start preview.
-            Surface subSurface = new Surface(subTexture);
-
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mPreviewRequestBuilder.addTarget(surface);
 //            mPreviewRequestBuilder.addTarget(subSurface);
 
+            if (Config.MainCamCfg.PREVIEW_SEC_FORMAT){
+                mPreviewRequestBuilder.addTarget(mSecImageReader.getSurface());
+            }
+
+            List<Surface> outputs;
+            if (Config.MainCamCfg.TAKE_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
+                outputs = Arrays.asList(surface, mImageReader.getSurface(), mSecImageReader.getSurface());
+            } else if (Config.SecCamCfg.ADD_SEC_PREVIEW) {
+                SurfaceTexture subTexture = mSubTextureView.getSurfaceTexture();
+                assert subTexture != null;
+                // We configure the size of default buffer to be the size of camera preview we want.
+                subTexture.setDefaultBufferSize(320, 480);
+                Surface subSurface = new Surface(subTexture);
+                mPreviewRequestBuilder.addTarget(subSurface);
+                outputs = Arrays.asList(surface, subSurface, mImageReader.getSurface());
+            } else {
+                outputs = Arrays.asList(surface, mImageReader.getSurface());
+            }
             // Here, we create a CameraCaptureSession for camera preview.
-            mCameraDevice.createCaptureSession(Arrays.asList(surface, mRawImageReader.getSurface(), mImageReader.getSurface()),
+            mCameraDevice.createCaptureSession(outputs,
                     new CameraCaptureSession.StateCallback() {
 
                         @Override
@@ -816,6 +860,7 @@ public class Camera2BasicFragment extends Fragment
      * Initiate a still image capture.
      */
     private void takePicture() {
+        Log.d(TAG, "takePicture: ");
         lockFocus();
     }
 
@@ -868,7 +913,9 @@ public class Camera2BasicFragment extends Fragment
             final CaptureRequest.Builder captureBuilder =
                     mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(mImageReader.getSurface());
-            captureBuilder.addTarget(mRawImageReader.getSurface());
+            if (Config.MainCamCfg.TAKE_SEC_FORMAT){
+                captureBuilder.addTarget(mSecImageReader.getSurface());
+            }
 
             // Use the same AE and AF modes as the preview.
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
@@ -887,7 +934,7 @@ public class Camera2BasicFragment extends Fragment
                                                @NonNull CaptureRequest request,
                                                @NonNull TotalCaptureResult result) {
                     showToast("Saved: " + mFile);
-                    Log.d(TAG, mFile.toString());
+                    Log.d(TAG, "onCaptureCompleted " + mFile.toString());
                     unlockFocus();
                 }
             };
@@ -986,6 +1033,9 @@ public class Camera2BasicFragment extends Fragment
         public void run() {
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
+            Log.d(TAG, "ImageSaver: image length: " + bytes.length
+                    + ", format: " +  mImage.getFormat() + ", w " + mImage.getWidth()
+                    + ", h " + mImage.getHeight());
             buffer.get(bytes);
             FileOutputStream output = null;
             try {
