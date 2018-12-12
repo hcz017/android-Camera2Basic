@@ -271,9 +271,10 @@ public class Camera2BasicFragment extends Fragment
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            Log.d(TAG, "onImageAvailable: second image");
-            mFile = new File(getActivity().getExternalFilesDir(null), i++ + "pic.sec");
-//            mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
+            String secFormat = CameraUtil.format2String(Config.MainCamCfg.SEC_FORMAT);
+            Log.d(TAG, "onImageAvailable: " + secFormat + " image");
+            mFile = new File(getActivity().getExternalFilesDir(null), i++ + "pic." + secFormat);
+            mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
         }
 
     };
