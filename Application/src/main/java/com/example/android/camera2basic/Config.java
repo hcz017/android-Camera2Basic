@@ -4,12 +4,12 @@ import android.graphics.ImageFormat;
 import android.util.Size;
 
 public class Config {
-    public static String MAIN_CAM_ID = "0";
+    public static String MAIN_CAM_ID = "3";
 
     // use fixed preview size @see #getFixedPreviewSize()
-    public static boolean USE_FIXED_PRE_SIZE = true;
+    public static boolean USE_FIXED_PRE_SIZE = false;
     // use fixed capture picture size @see #getFixedPictureSize()
-    public static boolean USE_FIXED_PIC_SIZE = true;
+    public static boolean USE_FIXED_PIC_SIZE = false;
 
     public static Size getFixedPreviewSize() {
         return new Size(1280, 720);
@@ -23,7 +23,7 @@ public class Config {
         // whether to take a raw pic when taking pic
         public static boolean TAKE_SEC_FORMAT = false;
         // whether to get raw data when init preview
-        public static boolean PREVIEW_SEC_FORMAT = false;
+        public static boolean PREVIEW_SEC_FORMAT = true;
 
         public static int SEC_FORMAT = ImageFormat.DEPTH16;
     }
