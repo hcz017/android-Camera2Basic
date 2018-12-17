@@ -22,6 +22,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
@@ -60,6 +61,7 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.example.android.camera2basic.gles.CameraGLSurfaceView;
+import com.example.android.camera2basic.settings.SettingsActivity;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -471,6 +473,7 @@ public class Camera2BasicFragment extends Fragment
     public void onViewCreated(final View view, Bundle savedInstanceState) {
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.info).setOnClickListener(this);
+        view.findViewById(R.id.btn_setting).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mSubTextureView = view.findViewById(R.id.sub_cam_view);
         if (Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
@@ -1027,6 +1030,10 @@ public class Camera2BasicFragment extends Fragment
                             .show();
                 }
                 break;
+            }
+            case R.id.btn_setting: {
+                Intent settingIntent = new Intent(getActivity(), SettingsActivity.class);
+                startActivity(settingIntent);
             }
         }
     }

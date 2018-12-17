@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:key="pref_key_storage_settings"
+        android:title="@string/camera_id">
+
+        <ListPreference
+            android:defaultValue="0"
+            android:entries="@array/camera_ids"
+            android:entryValues="@array/camera_ids"
+            android:key="camera_id"
+            android:summary="0"
+            android:title="@string/camera_id"/>
+        <ListPreference
+            android:defaultValue="@string/setting_camera_value_0"
+            android:entries="@array/setting_camera_id_entries"
+            android:entryValues="@array/setting_camera_id_entries_value"
+            android:key="pref_camera_id"
+            android:layout="@layout/list_pref_layout"
+            android:title="@string/setting_camera_id"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="额外数据格式">
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/resolution">
+        <ListPreference
+            android:key="pref_picture_size"
+            android:layout="@layout/list_pref_layout"
+            android:title="@string/setting_picture_size"/>
+        <ListPreference
+            android:key="pref_preview_size"
+            android:layout="@layout/list_pref_layout"
+            android:title="@string/setting_preview_size"/>
+    </PreferenceCategory>
+</PreferenceScreen>

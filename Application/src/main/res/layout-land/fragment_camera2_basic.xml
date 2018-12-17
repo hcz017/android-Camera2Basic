@@ -36,6 +36,15 @@
         android:background="@color/control_background"
         android:orientation="horizontal">
 
+        <ImageButton
+            android:id="@+id/btn_setting"
+            style="@android:style/Widget.Material.Light.Button.Borderless"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:contentDescription="@string/action_settings"
+            android:src="@drawable/ic_vector_settings"/>
+
         <Button
             android:id="@+id/picture"
             android:layout_width="wrap_content"
