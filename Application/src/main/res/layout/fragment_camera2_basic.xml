@@ -33,8 +33,8 @@
 
         <TextureView
             android:id="@+id/sub_cam_view"
-            android:layout_width="150dp"
-            android:layout_height="200dp"/>
+            android:layout_width="240dp"
+            android:layout_height="320dp"/>
     </FrameLayout>
 
     <FrameLayout
