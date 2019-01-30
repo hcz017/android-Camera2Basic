@@ -568,14 +568,14 @@ public class Camera2BasicFragment extends Fragment
 
                 if (Config.MainCamCfg.TAKE_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
                     int secFormat = Config.MainCamCfg.SEC_FORMAT;
-//                    Size secLargest = Collections.max(
-//                            Arrays.asList(map.getOutputSizes(secFormat)),
-//                            new CompareSizesByArea());
+                    Size secLargest = Collections.max(
+                            Arrays.asList(map.getOutputSizes(secFormat)),
+                            new CompareSizesByArea());
 
                     // xiaomi 8
 //                    Size secLargest = new Size(2016, 1512);
                     // sdm 670
-                    Size secLargest = new Size(640, 480);
+//                    Size secLargest = new Size(640, 480);
                     mSecImageReader = ImageReader.newInstance(secLargest.getWidth(),
                             secLargest.getHeight(), secFormat, /*maxImages*/2);
                     mSecImageReader.setOnImageAvailableListener(
