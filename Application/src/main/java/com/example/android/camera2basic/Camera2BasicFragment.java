@@ -275,23 +275,17 @@ public class Camera2BasicFragment extends Fragment
             Log.d(TAG, "onImageAvailable: " + secFormat + " image, i: " + i);
             mFile = new File(getActivity().getExternalFilesDir(null), i++ + "pic." + secFormat);
             Image image = reader.acquireNextImage();
-//            mBackgroundHandler.post(new DisplayDepth(image, 640, 480, mSubTextureView));
-//            mBackgroundHandler.post(new ImageSaver(image, mFile));
-
             byte[] data;
-//            ShortBuffer shortDepthBuffer = image.getPlanes()[0].getBuffer().asShortBuffer();
-//            data = new byte[shortDepthBuffer.remaining()];
-//            data = getByteFromReader(reader);
-            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-            data = new byte[buffer.remaining()];
-            buffer.get(data);
+            data = getByteFromReader(image);
+            Log.d(TAG, "onImageAvailable: data length: " + data.length);
+            mBackgroundHandler.post(new DisplayDepth(data, reader.getWidth(), reader.getHeight(),
+                    new Surface(mSubTextureView.getSurfaceTexture())));
+
+//            mBackgroundHandler.post(new ImageSaver(image, mFile));
             image.close();
-            if (true) {
-//            if (i % 10 == 0) {
-                new DataProcessTask(data, reader.getWidth(), reader.getHeight(),
-                        new Surface(mSubTextureView.getSurfaceTexture())).execute();
-            }
-            i++;
+
+//            new DataProcessTask(data, reader.getWidth(), reader.getHeight(),
+//                    new Surface(mSubTextureView.getSurfaceTexture())).execute();
         }
 
     };
@@ -592,7 +586,7 @@ public class Camera2BasicFragment extends Fragment
                     // xiaomi 8
 //                    Size secLargest = new Size(2016, 1512);
                     // sdm 670
-                    Size secLargest = new Size(480, 640);
+                    Size secLargest = new Size(1280, 960);
                     mSecImageReader = ImageReader.newInstance(secLargest.getWidth(),
                             secLargest.getHeight(), secFormat, /*maxImages*/2);
                     mSecImageReader.setOnImageAvailableListener(
@@ -1051,7 +1045,7 @@ public class Camera2BasicFragment extends Fragment
         public void run() {
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
-            Log.d(TAG, "ImageSaver: image length: " + bytes.length
+            Log.d(TAG, "ImageSaver: image bytes length: " + bytes.length
                     + ", format: " +  mImage.getFormat() + ", w " + mImage.getWidth()
                     + ", h " + mImage.getHeight());
             buffer.get(bytes);
@@ -1151,6 +1145,13 @@ public class Camera2BasicFragment extends Fragment
                             })
                     .create();
         }
+    }
+
+    private byte[] getByteFromReader(Image image) {
+        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+        return bytes;
     }
 
     private byte[] getByteFromReader(ImageReader reader) {
