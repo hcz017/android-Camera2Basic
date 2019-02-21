@@ -59,6 +59,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.example.android.camera2basic.gles.CameraGLSurfaceView;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -166,6 +168,7 @@ public class Camera2BasicFragment extends Fragment
      */
     private AutoFitTextureView mTextureView;
     private TextureView mSubTextureView;
+    private CameraGLSurfaceView mCameraGLView;
 
     /**
      * A {@link CameraCaptureSession } for camera preview.
@@ -459,7 +462,10 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
-        mSubTextureView = view.findViewById(R.id.sub_cam_view);
+        mCameraGLView = view.findViewById(R.id.sub_cam_view);
+        if (Config.SecCamCfg.ADD_SEC_PREVIEW) {
+            mCameraGLView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -477,7 +483,7 @@ public class Camera2BasicFragment extends Fragment
         // available, and "onSurfaceTextureAvailable" will not be called. In that case, we can open
         // a camera and start preview from here (otherwise, we wait until the surface is ready in
         // the SurfaceTextureListener).
-        if (mTextureView.isAvailable() && mSubTextureView.isAvailable()) {
+        if (mTextureView.isAvailable() && mCameraGLView.isActivated()) {
             openCamera(mTextureView.getWidth(), mTextureView.getHeight());
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
@@ -773,7 +779,7 @@ public class Camera2BasicFragment extends Fragment
             if (Config.MainCamCfg.TAKE_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
                 outputs = Arrays.asList(surface, mImageReader.getSurface(), mSecImageReader.getSurface());
             } else if (Config.SecCamCfg.ADD_SEC_PREVIEW) {
-                SurfaceTexture subTexture = mSubTextureView.getSurfaceTexture();
+                SurfaceTexture subTexture = mCameraGLView.getSurfaceTexture();
                 assert subTexture != null;
                 // We configure the size of default buffer to be the size of camera preview we want.
                 subTexture.setDefaultBufferSize(480, 360);

@@ -31,10 +31,11 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true">
 
-        <TextureView
+        <com.example.android.camera2basic.gles.CameraGLSurfaceView
             android:id="@+id/sub_cam_view"
             android:layout_width="150dp"
-            android:layout_height="200dp"/>
+            android:layout_height="200dp"
+            android:visibility="gone"/>
     </FrameLayout>
 
     <FrameLayout
