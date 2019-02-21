@@ -691,6 +691,11 @@ public class Camera2BasicFragment extends Fragment
             }
             Log.d(TAG, "openCamera: camera id: " + mCameraId);
             manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
+            mCameraGLView.setBackCamera(mCameraId.equals(Config.BACK_CAM_ID));
+            if (mCameraId.equals(Config.FRONT_CAM_ID)) {
+                mCameraGLView.setFilpV(Config.FLIP_PREVIEW);
+            }
+
         } catch (CameraAccessException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {

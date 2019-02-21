@@ -175,6 +175,22 @@ public class CameraGLSurfaceRender extends GLAbstractRender {
         this.isBackCamera = isBackCamera;
     }
 
+    public void setFilpV(boolean flip) {
+        if (flip) {
+            frontTextureData = new float[]{
+                    0f, 0f,
+                    0f, 1f,
+                    1f, 0f,
+                    1f, 1f
+            };
+        }
+        this.frontTextureBuffer = ByteBuffer.allocateDirect(frontTextureData.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+                .put(frontTextureData);
+        this.frontTextureBuffer.position(0);
+    }
+
     public interface CameraGLSufaceRenderCallback {
         void onRequestRender();
 

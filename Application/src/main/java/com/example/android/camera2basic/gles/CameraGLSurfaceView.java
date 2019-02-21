@@ -63,6 +63,10 @@ public class CameraGLSurfaceView extends GLSurfaceView implements CameraGLSurfac
         this.mRender.setBackCamera(isBackCamera);
     }
 
+    public void setFilpV(boolean flip) {
+        mRender.setFilpV(flip);
+    }
+
     public interface CameraGLSurfaceViewCallback {
         void onSurfaceViewCreate(SurfaceTexture texture);
 
