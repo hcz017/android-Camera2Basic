@@ -29,7 +29,7 @@ public class Config {
     }
 
     static class SecCamCfg {
-        // show a second preview on screen
-        public static boolean ADD_SEC_PREVIEW = false;
+        // show a second preview on screen, currently it for main camera not the aux camera
+        public static boolean ADD_SEC_PREVIEW = true;
     }
 }
