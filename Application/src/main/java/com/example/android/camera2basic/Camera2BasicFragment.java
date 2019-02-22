@@ -281,7 +281,7 @@ public class Camera2BasicFragment extends Fragment
             mBackgroundHandler.post(new DisplayDepth(data, reader.getWidth(), reader.getHeight(),
                     new Surface(mSubTextureView.getSurfaceTexture())));
 
-//            mBackgroundHandler.post(new ImageSaver(image, mFile));
+//            mBackgroundHandler.post(new ImageSaver(image, data, mFile));
             image.close();
 
 //            new DataProcessTask(data, reader.getWidth(), reader.getHeight(),
@@ -1030,6 +1030,8 @@ public class Camera2BasicFragment extends Fragment
          * The JPEG image
          */
         private final Image mImage;
+
+        private final byte[] mData;
         /**
          * The file we save the image into.
          */
@@ -1039,8 +1041,15 @@ public class Camera2BasicFragment extends Fragment
             mImage = image;
             mFile = file;
             Log.d(TAG, "Saved: " + mFile.toString());
+            mData = new byte[0];
         }
 
+        ImageSaver(Image image, byte[] data, File file) {
+            mImage = image;
+            mData = data;
+            mFile = file;
+            Log.d(TAG, "Saved: " + mFile.toString() + ", mData length: " + mData.length);
+        }
         @Override
         public void run() {
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
@@ -1050,6 +1059,9 @@ public class Camera2BasicFragment extends Fragment
                     + ", h " + mImage.getHeight());
             buffer.get(bytes);
             FileOutputStream output = null;
+            if (mData.length != 0) {
+                bytes = mData;
+            }
             try {
                 output = new FileOutputStream(mFile);
                 output.write(bytes);
