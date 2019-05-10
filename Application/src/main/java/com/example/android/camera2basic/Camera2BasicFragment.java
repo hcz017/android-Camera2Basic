@@ -947,6 +947,8 @@ public class Camera2BasicFragment extends Fragment
                                                @NonNull TotalCaptureResult result) {
                     showToast("Saved: " + mFile);
                     Log.d(TAG, "onCaptureCompleted " + mFile.toString());
+                    Integer iso  = result.get(CaptureResult.SENSOR_SENSITIVITY);
+                    Log.d(TAG, "onCaptureCompleted: iso: " + iso);
                     unlockFocus();
                 }
             };
