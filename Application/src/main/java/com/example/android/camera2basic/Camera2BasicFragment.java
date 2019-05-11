@@ -276,7 +276,7 @@ public class Camera2BasicFragment extends Fragment
             mFile = new File(getActivity().getExternalFilesDir(null), i++ + "pic." + secFormat);
             Image image = reader.acquireNextImage();
             byte[] data;
-            data = getByteFromReader(image);
+            data = CameraUtil.YUV_420_888toNV21(image);
             Log.d(TAG, "onImageAvailable: data length: " + data.length);
             mBackgroundHandler.post(new DisplayDepth(data, reader.getWidth(), reader.getHeight(),
                     new Surface(mSubTextureView.getSurfaceTexture())));
@@ -1166,8 +1166,9 @@ public class Camera2BasicFragment extends Fragment
         return bytes;
     }
 
+    // if format YUV_420_888 return nv12 data
     private byte[] getByteFromReader(ImageReader reader) {
-        Image image = reader.acquireLatestImage();
+        Image image = reader.acquireNextImage();
         int totalSize = 0;
         ByteBuffer totalBuffer;
         if (reader.getImageFormat() == ImageFormat.YUV_420_888) {
