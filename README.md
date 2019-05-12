@@ -1,90 +1,77 @@
+# Camera API 2 学习记录
 
-Android Camera2Basic Sample
-===================================
+本文是学习camera API 2 过程一些的记录。文档大部分来自官网，代码基本上来自Google [Camera2Basic](https://github.com/googlesamples/android-Camera2Basic)。
 
-This sample demonstrates how to use basic functionalities of Camera2
-API. You can learn how to iterate through characteristics of all the
-cameras attached to the device, display a camera preview, and take
-pictures.
+![](./screenshots/camera_model.png)
 
-Introduction
-------------
+# 1. 几个主要部分
 
-The [Camera2 API][1] provides an interface to individual camera
-devices connected to an Android device. It replaces the deprecated
-Camera class.
+**CameraManager** - 枚举，查询camera 数量，open camera 设备
 
-Use [getCameraIdList][2] to get a list of all the available
-cameras. You can then use [getCameraCharacteristics][3] and find the
-best camera that suits your need (front/rear facing, resolution etc).
+**CameraDevices** - 代表单个相机，创建会话或请求
 
-Create an instance of [CameraDevice.StateCallback][4] and open a
-camera. It is ready to start camera preview when the camera is opened.
+**CameraCaptureSession** - 要从摄像头拍照或是预览图像，应用程序必须首先使用createCaptureSession(List<Surface> outputs, CameraCaptureSession.StateCallback callback, Handler handler) 创建一个带有一组输出Surface 的camera capture session。
+@param outputs The new set of Surfaces that should be made available as targets for captured image data.
+mCameraDevice.createCaptureSession()
 
-This sample uses TextureView to show the camera preview. Create a
-[CameraCaptureSession][5] and set a repeating [CaptureRequest][6] to it.
+**CaptureRequest** - 应用需要构建一个CaptureRequest， 它定义了所有拍照参数，同时这个Request 还列出了哪些配置的输出Surface 应该用作此capture 的目标。
+@param outputTarget Surface to use as an output target for this request
+每个Surface必须预先配置适当的大小和格式（如果适用），以匹配摄像机设备可用的大小和格式。 目标Surface可以从各种类中获得，包括SurfaceView，SurfaceTexture via Surface（SurfaceTexture），MediaCodec，MediaRecorder，Allocation和ImageReader。
+（后面单独写一篇介绍Surface 的）。
 
-Still image capture takes several steps. First, you need to lock the
-focus of the camera by updating the CaptureRequest for the camera
-preview. Then, in a similar way, you need to run a precapture
-sequence. After that, it is ready to capture a picture. Create a new
-CaptureRequest and call [capture][7]. Don't forget to unlock the focus
-when you are done.
+**CaptureResult** - 包含capture 的部分配置信息，sensor 焦距闪光灯信息和最终的输出buffer。
 
-[1]: https://developer.android.com/reference/android/hardware/camera2/package-summary.html
-[2]: https://developer.android.com/reference/android/hardware/camera2/CameraManager.html#getCameraIdList()
-[3]: https://developer.android.com/reference/android/hardware/camera2/CameraManager.html#getCameraCharacteristics(java.lang.String)
-[4]: https://developer.android.com/reference/android/hardware/camera2/CameraDevice.StateCallback.html
-[5]: https://developer.android.com/reference/android/hardware/camera2/CameraCaptureSession.html
-[6]: https://developer.android.com/reference/android/hardware/camera2/CaptureRequest.html
-[7]: https://developer.android.com/reference/android/hardware/camera2/CameraCaptureSession.html#capture(android.hardware.camera2.CaptureRequest, android.hardware.camera2.CameraCaptureSession.CaptureCallback, android.os.Handler)
+# 2. 添加额外的预览
 
-Pre-requisites
---------------
+## 2.1 复制一个主摄的预览
 
-- Android SDK 27
-- Android Build Tools v27.0.2
-- Android Support Repository
+在createCaptureSession(List<Surface> outputs, CameraCaptureSession.StateCallback callback, Handler handler) 的第一个参数，添加一个surface 到list，这个surface 直接由view 上的TextureView 而来，同时这个surface 需要通过到CaptureRequest.Builder 的addTarget 方法添加到preview 的request 中去，之后预览内容将会直接显示到该控件上。
 
-Screenshots
--------------
+![](./screenshots/copy_main_preview.png)
+参考代码： https://github.com/hcz017/android-Camera2Basic/tree/add_another_main_preview
+## 2.2 添加另一个格式的预览数据并显示
 
-<img src="screenshots/main.png" height="400" alt="Screenshot"/> 
+上一种情况我们直接从view 种拿到surface，并没有对这一路预览数据的格式做设置（默认为PRIVATE 格式），如果我们有格式的要求，就需要通过ImagerReader 来设置。
 
-Getting Started
----------------
+```java
+mSecImageReader = ImageReader.newInstance(secLargest.getWidth(),
+                            secLargest.getHeight(), imageFormat, /*maxImages*/2);
+                    mSecImageReader.setOnImageAvailableListener(
+                            mOnSecImageAvailableListener, mBackgroundHandler);
+```
 
-This sample uses the Gradle build system. To build this project, use the
-"gradlew build" command or use "Import Project" in Android Studio.
+之后要把这个ImagerReader 的surface 添加到preview 的request.builder 和createCaptureSession 的surface list 中去 `mPreviewRequestBuilder.addTarget(mSecImageReader.getSurface());` 之后通过`onImageAvailable` 的回调就可以取得实时预览的数据，通过格式转换把数据转换成bitmap 就可以draw 到TextureView 上(从性能上考虑这不是最优方案)。
 
-Support
--------
+![](./screenshots/add_sec_format_preview.png)
 
-- Google+ Community: https://plus.google.com/communities/105153134372062985968
-- Stack Overflow: http://stackoverflow.com/questions/tagged/android
+如果添加到拍照的request 中去，则会在拍照时候回调onImageAvailable，同时拍两种格式的照片就是这样做到的。
+参考代码： https://github.com/hcz017/android-Camera2Basic/tree/sec_format_preview
 
-If you've found an error in this sample, please file an issue:
-https://github.com/googlesamples/android-Camera2Basic
+# 3. 水平镜像翻转前置摄像头预览
 
-Patches are encouraged, and may be submitted by forking this project and
-submitting a pull request through GitHub. Please see CONTRIBUTING.md for more details.
+在API 1 上，调用setFlip() 防范传入想翻转的方向就可以了，在API 上没有对应的方法，在系统源码中系统会根据摄像头的朝向决定在屏幕上渲染时是否翻转图像内容
+SurfaceTextureRenderer.java
 
-License
--------
+```java
+drawFrame(mSurfaceTexture, holder.width, holder.height,
+                            (mFacing == CameraCharacteristics.LENS_FACING_FRONT) ?
+                                    FLIP_TYPE_HORIZONTAL : FLIP_TYPE_NONE);
+```
 
-Copyright 2017 The Android Open Source Project, Inc.
+那么在API 2 上我想到的一个方法便是，在渲染到屏幕上之前截取预览数据，把图像内容变换后再渲染显示。
 
-Licensed to the Apache Software Foundation (ASF) under one or more contributor
-license agreements.  See the NOTICE file distributed with this work for
-additional information regarding copyright ownership.  The ASF licenses this
-file to you under the Apache License, Version 2.0 (the "License"); you may not
-use this file except in compliance with the License.  You may obtain a copy of
-the License at
+这里就用到了自定义的 GLSurfaceView，把GLSurfaceView 作为显示预览的控件，GLSV 的surface 添加到builder 和createCaptureSession 的surface list，之后通过修改映射点的位置，把左右调换顺序实现预览图象的水平翻转。这里没有用到ImageReader，如果需要其他格式或者二次处理需求可以使用ImageReader 获得数据后再绘制到GLSurfaceView 上。
 
-http://www.apache.org/licenses/LICENSE-2.0
+![](./screenshots/mirror_flip_front_preview.png)
+参考代码： https://github.com/hcz017/android-Camera2Basic/tree/mirror_flip_front_camera_preview
+# 4. 问题
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
-License for the specific language governing permissions and limitations under
-the License.
+在onImageAvailable 回调中，用完image 后及时close image。另外如果时多线程的话，注意view destory 和停止渲染预览的先后关系。有可能会出现view 已经销毁了但是还在试图渲染新的图像，此时会报错。
+
+## 参考链接
+
+[android.hardware.camera2](https://developer.android.com/reference/android/hardware/camera2/package-summary)
+
+[CameraCaptureSession](https://developer.android.com/reference/android/hardware/camera2/CameraCaptureSession)
+
+[CameraDevice](https://developer.android.com/reference/android/hardware/camera2/CameraDevice)
