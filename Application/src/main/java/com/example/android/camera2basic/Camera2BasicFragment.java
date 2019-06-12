@@ -567,6 +567,7 @@ public class Camera2BasicFragment extends Fragment
                     Log.d(TAG, "setUpCameraOutputs: using fixed picture size, w/h: "
                             + largest.getWidth() + "/" + largest.getHeight());
                 }
+                Log.d(TAG,"setUpCameraOutputs: picture size: "+ largest.toString());
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
                         ImageFormat.JPEG, /*maxImages*/2);
                 mImageReader.setOnImageAvailableListener(
