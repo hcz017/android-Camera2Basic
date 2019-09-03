@@ -64,6 +64,7 @@ import com.example.android.camera2basic.gles.CameraGLSurfaceView;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -576,6 +577,7 @@ public class Camera2BasicFragment extends Fragment
                 Size largest = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
+                Log.d(TAG, "setUpCameraOutputs: picture size: " + largest.toString());
                 if (Config.USE_FIXED_PIC_SIZE) {
                     largest = Config.getFixedPictureSize();
                     Log.d(TAG, "setUpCameraOutputs: using fixed picture size, w/h: "
@@ -654,7 +656,7 @@ public class Camera2BasicFragment extends Fragment
                 mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
                         rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
                         maxPreviewHeight, largest);
-
+                Log.d(TAG, "setUpCameraOutputs: preview size: " + mPreviewSize.toString());
                 if (Config.USE_FIXED_PRE_SIZE) {
                     mPreviewSize = Config.getFixedPreviewSize();
                     Log.d(TAG, "setUpCameraOutputs: using fixed preview size, w/h: "
@@ -826,6 +828,21 @@ public class Camera2BasicFragment extends Fragment
                                 // Auto focus should be continuous for camera preview.
                                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                                try {
+                                    Class[] params = new Class[]{String.class, Class.class};
+                                    Object[] switchValues = new Object[]{"org.codeaurora.qcamera3.bokeh.enable", Boolean.class};
+                                    Object[] levelValues = new Object[]{"org.codeaurora.qcamera3.bokeh.blurLevel", Integer.class};
+                                    Class<?> cls = Class.forName("android.hardware.camera2.CaptureRequest$Key");
+                                    Constructor cons = cls.getDeclaredConstructor(params);
+                                    cons.setAccessible(true);
+                                    Object switchObj = cons.newInstance(switchValues);
+                                    Object levelObj = cons.newInstance(levelValues);
+                                    mPreviewRequestBuilder.set((CaptureRequest.Key<Boolean>) switchObj, true);
+                                    mPreviewRequestBuilder.set((CaptureRequest.Key<Integer>) levelObj, 50);
+                                    Log.i(TAG, "bokeh over");
+                                } catch (Exception e) {
+                                    Log.e(TAG, "bokeh error: ", e);
+                                }
                                 // Flash is automatically enabled when necessary.
                                 setAutoFlash(mPreviewRequestBuilder);
 

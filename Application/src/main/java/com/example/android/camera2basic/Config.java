@@ -6,10 +6,10 @@ import android.util.Size;
 public class Config {
     public static String BACK_CAM_ID = "0";
     public static String FRONT_CAM_ID = "1";
-    public static String MAIN_CAM_ID = "0";
+    public static String MAIN_CAM_ID = "4";
 
     // use fixed preview size @see #getFixedPreviewSize()
-    public static boolean USE_FIXED_PRE_SIZE = false;
+    public static boolean USE_FIXED_PRE_SIZE = true;
     // use fixed capture picture size @see #getFixedPictureSize()
     public static boolean USE_FIXED_PIC_SIZE = false;
 
@@ -17,7 +17,7 @@ public class Config {
     public static final boolean FLIP_PREVIEW = false;
 
     public static Size getFixedPreviewSize() {
-        return new Size(1280, 720);
+        return new Size(1600, 1200);
     }
 
     public static Size getFixedPictureSize() {
@@ -38,6 +38,6 @@ public class Config {
         // Todo:: it works when #MainCamCfg.SNAPSHOT_SEC_FORMAT and #MainCamCfg.PREVIEW_SEC_FORMAT both false
         public static boolean ADD_GL_SURFACE_PREVIEW = false;
         // works when open front camera #Config.FRONT_CAM_ID
-        public static final boolean FLIP_GL_PREVIEW = true;
+        public static final boolean FLIP_GL_PREVIEW = false;
     }
 }
