@@ -278,11 +278,13 @@ public class Camera2BasicFragment extends Fragment
             byte[] data;
             data = CameraUtil.YUV_420_888toNV21(image);
             Log.d(TAG, "onImageAvailable: data length: " + data.length);
-            mBackgroundHandler.post(new DisplayDepth(data, reader.getWidth(), reader.getHeight(),
-                    new Surface(mSubTextureView.getSurfaceTexture())));
-
-//            mBackgroundHandler.post(new ImageSaver(image, data, mFile));
-            image.close();
+            if (Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
+                mBackgroundHandler.post(new DisplayDepth(data, reader.getWidth(), reader.getHeight(),
+                        new Surface(mSubTextureView.getSurfaceTexture())));
+                image.close();
+            } else if (Config.MainCamCfg.TAKE_SEC_FORMAT) {
+                mBackgroundHandler.post(new ImageSaver(image, data, mFile));
+            }
 
 //            new DataProcessTask(data, reader.getWidth(), reader.getHeight(),
 //                    new Surface(mSubTextureView.getSurfaceTexture())).execute();
@@ -579,6 +581,7 @@ public class Camera2BasicFragment extends Fragment
 
                 if (Config.MainCamCfg.TAKE_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
                     int secFormat = Config.MainCamCfg.SEC_FORMAT;
+                    Log.d(TAG, "second format: " + CameraUtil.format2String(secFormat));
 //                    Size secLargest = Collections.max(
 //                            Arrays.asList(map.getOutputSizes(secFormat)),
 //                            new CompareSizesByArea());
