@@ -275,12 +275,12 @@ public class Camera2BasicFragment extends Fragment
         @Override
         public void onImageAvailable(ImageReader reader) {
             String secFormat = CameraUtil.format2String(Config.MainCamCfg.SEC_FORMAT);
-            Log.d(TAG, "onImageAvailable: " + secFormat + " image, i: " + i);
+            Log.d(TAG, "onImageAvailable: sec image " + secFormat + " image, index: " + i);
             mFile = new File(getActivity().getExternalFilesDir(null), i++ + "pic." + secFormat);
             Image image = reader.acquireNextImage();
             byte[] data;
             data = CameraUtil.YUV_420_888toNV21(image);
-            Log.d(TAG, "onImageAvailable: data length: " + data.length);
+            Log.d(TAG, "onImageAvailable: sec image data length: " + data.length);
             if (Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
                 mBackgroundHandler.post(new DisplayDepth(data, reader.getWidth(), reader.getHeight(),
                         new Surface(mSubTextureView.getSurfaceTexture())));
@@ -1065,21 +1065,21 @@ public class Camera2BasicFragment extends Fragment
             mImage = image;
             mData = data;
             mFile = file;
-            Log.d(TAG, "Saved: " + mFile.toString() + ", mData length: " + mData.length);
+            Log.d(TAG, "Saved: " + mFile.toString());
         }
 
         @Override
         public void run() {
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
-            Log.d(TAG, "ImageSaver: image bytes length: " + bytes.length
-                    + ", format: " + mImage.getFormat() + ", w " + mImage.getWidth()
-                    + ", h " + mImage.getHeight());
             buffer.get(bytes);
             FileOutputStream output = null;
             if (mData.length != 0) {
                 bytes = mData;
             }
+            Log.d(TAG, "ImageSaver: image bytes length: " + bytes.length
+                    + ", format: " + mImage.getFormat() + ", w " + mImage.getWidth()
+                    + ", h " + mImage.getHeight());
             try {
                 output = new FileOutputStream(mFile);
                 output.write(bytes);

@@ -25,9 +25,9 @@ public class Config {
     }
 
     static class MainCamCfg {
-        // whether to take a raw pic when taking pic
+        // whether to take and save #SEC_FORMAT image when snapshot
         public static boolean SNAPSHOT_SEC_FORMAT = false;
-        // whether to get raw data when init preview;
+        // whether to get and preview #SEC_FORMAT image(on TextureView)
         public static boolean PREVIEW_SEC_FORMAT = true;
 
         public static int SEC_FORMAT = ImageFormat.YUV_420_888;
