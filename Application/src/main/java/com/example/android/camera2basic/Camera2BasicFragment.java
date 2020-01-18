@@ -198,8 +198,8 @@ public class Camera2BasicFragment extends Fragment
             mCameraDevice = cameraDevice;
 
             // to ensure surface available
-            if (Config.AuxCamCfg.ADD_AUX_CAM_PREVIEW){
-                try{
+            if (Config.GLSurfaceCfg.ADD_GL_SURFACE_PREVIEW) {
+                try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -275,9 +275,19 @@ public class Camera2BasicFragment extends Fragment
         @Override
         public void onImageAvailable(ImageReader reader) {
             String secFormat = CameraUtil.format2String(Config.MainCamCfg.SEC_FORMAT);
-            Log.d(TAG, "onImageAvailable: " + secFormat + " image");
+            Log.d(TAG, "onImageAvailable: " + secFormat + " image, i: " + i);
             mFile = new File(getActivity().getExternalFilesDir(null), i++ + "pic." + secFormat);
-            mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
+            Image image = reader.acquireNextImage();
+            byte[] data;
+            data = CameraUtil.YUV_420_888toNV21(image);
+            Log.d(TAG, "onImageAvailable: data length: " + data.length);
+            if (Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
+                mBackgroundHandler.post(new DisplayDepth(data, reader.getWidth(), reader.getHeight(),
+                        new Surface(mSubTextureView.getSurfaceTexture())));
+                image.close();
+            } else if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT) {
+                mBackgroundHandler.post(new ImageSaver(image, data, mFile));
+            }
         }
 
     };
@@ -415,7 +425,7 @@ public class Camera2BasicFragment extends Fragment
      * @return The optimal {@code Size}, or an arbitrary one if none were big enough
      */
     private static Size chooseOptimalSize(Size[] choices, int textureViewWidth,
-            int textureViewHeight, int maxWidth, int maxHeight, Size aspectRatio) {
+                                          int textureViewHeight, int maxWidth, int maxHeight, Size aspectRatio) {
 
         // Collect the supported resolutions that are at least as big as the preview Surface
         List<Size> bigEnough = new ArrayList<>();
@@ -427,7 +437,7 @@ public class Camera2BasicFragment extends Fragment
             if (option.getWidth() <= maxWidth && option.getHeight() <= maxHeight &&
                     option.getHeight() == option.getWidth() * h / w) {
                 if (option.getWidth() >= textureViewWidth &&
-                    option.getHeight() >= textureViewHeight) {
+                        option.getHeight() >= textureViewHeight) {
                     bigEnough.add(option);
                 } else {
                     notBigEnough.add(option);
@@ -462,8 +472,12 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
-        mCameraGLView = view.findViewById(R.id.sub_cam_view);
-        if (Config.AuxCamCfg.ADD_AUX_CAM_PREVIEW) {
+        mSubTextureView = view.findViewById(R.id.sub_cam_view);
+        if (Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
+            mSubTextureView.setVisibility(View.VISIBLE);
+        }
+        mCameraGLView = view.findViewById(R.id.gl_cam_view);
+        if (Config.GLSurfaceCfg.ADD_GL_SURFACE_PREVIEW) {
             mCameraGLView.setVisibility(View.VISIBLE);
         }
     }
@@ -554,7 +568,7 @@ public class Camera2BasicFragment extends Fragment
                     continue;
                 }
                 String[][] supportFormatStr = CameraUtil.getOutputFormat(map.getOutputFormats());
-                for (String format: supportFormatStr[0]){
+                for (String format : supportFormatStr[0]) {
                     Log.d(TAG, "setUpCameraOutputs: getOutputFormat: " + format);
                 }
 
@@ -567,22 +581,22 @@ public class Camera2BasicFragment extends Fragment
                     Log.d(TAG, "setUpCameraOutputs: using fixed picture size, w/h: "
                             + largest.getWidth() + "/" + largest.getHeight());
                 }
-                Log.d(TAG,"setUpCameraOutputs: picture size: "+ largest.toString());
+                Log.d(TAG, "setUpCameraOutputs: picture size: " + largest.toString());
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
                         ImageFormat.JPEG, /*maxImages*/2);
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
 
-                if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
+                if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
                     int secFormat = Config.MainCamCfg.SEC_FORMAT;
-                    Size secLargest = Collections.max(
-                            Arrays.asList(map.getOutputSizes(secFormat)),
-                            new CompareSizesByArea());
+//                    Size secLargest = Collections.max(
+//                            Arrays.asList(map.getOutputSizes(secFormat)),
+//                            new CompareSizesByArea());
 
                     // xiaomi 8
 //                    Size secLargest = new Size(2016, 1512);
                     // sdm 670
-//                    Size secLargest = new Size(640, 480);
+                    Size secLargest = new Size(640, 480);
                     mSecImageReader = ImageReader.newInstance(secLargest.getWidth(),
                             secLargest.getHeight(), secFormat, /*maxImages*/2);
                     mSecImageReader.setOnImageAvailableListener(
@@ -641,7 +655,7 @@ public class Camera2BasicFragment extends Fragment
                         rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
                         maxPreviewHeight, largest);
 
-                if(Config.USE_FIXED_PRE_SIZE){
+                if (Config.USE_FIXED_PRE_SIZE) {
                     mPreviewSize = Config.getFixedPreviewSize();
                     Log.d(TAG, "setUpCameraOutputs: using fixed preview size, w/h: "
                             + mPreviewSize.getWidth() + "/" + mPreviewSize.getHeight());
@@ -694,7 +708,7 @@ public class Camera2BasicFragment extends Fragment
             manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
             mCameraGLView.setBackCamera(mCameraId.equals(Config.BACK_CAM_ID));
             if (mCameraId.equals(Config.FRONT_CAM_ID)) {
-                mCameraGLView.setFilpV(Config.FLIP_PREVIEW);
+                mCameraGLView.setFilpV(Config.GLSurfaceCfg.FLIP_GL_PREVIEW);
             }
 
         } catch (CameraAccessException e) {
@@ -777,14 +791,14 @@ public class Camera2BasicFragment extends Fragment
             mPreviewRequestBuilder.addTarget(surface);
 //            mPreviewRequestBuilder.addTarget(subSurface);
 
-            if (Config.MainCamCfg.PREVIEW_SEC_FORMAT){
+            if (Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
                 mPreviewRequestBuilder.addTarget(mSecImageReader.getSurface());
             }
 
             List<Surface> outputs;
-            if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
+            if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
                 outputs = Arrays.asList(surface, mImageReader.getSurface(), mSecImageReader.getSurface());
-            } else if (Config.AuxCamCfg.ADD_AUX_CAM_PREVIEW) {
+            } else if (Config.GLSurfaceCfg.ADD_GL_SURFACE_PREVIEW) {
                 SurfaceTexture subTexture = mCameraGLView.getSurfaceTexture();
                 assert subTexture != null;
                 // We configure the size of default buffer to be the size of camera preview we want.
@@ -926,7 +940,7 @@ public class Camera2BasicFragment extends Fragment
             final CaptureRequest.Builder captureBuilder =
                     mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(mImageReader.getSurface());
-            if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT){
+            if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT) {
                 captureBuilder.addTarget(mSecImageReader.getSurface());
             }
 
@@ -948,7 +962,7 @@ public class Camera2BasicFragment extends Fragment
                                                @NonNull TotalCaptureResult result) {
                     showToast("Saved: " + mFile);
                     Log.d(TAG, "onCaptureCompleted " + mFile.toString());
-                    Integer iso  = result.get(CaptureResult.SENSOR_SENSITIVITY);
+                    Integer iso = result.get(CaptureResult.SENSOR_SENSITIVITY);
                     Log.d(TAG, "onCaptureCompleted: iso: " + iso);
                     unlockFocus();
                 }
@@ -1033,6 +1047,8 @@ public class Camera2BasicFragment extends Fragment
          * The JPEG image
          */
         private final Image mImage;
+
+        private final byte[] mData;
         /**
          * The file we save the image into.
          */
@@ -1042,17 +1058,28 @@ public class Camera2BasicFragment extends Fragment
             mImage = image;
             mFile = file;
             Log.d(TAG, "Saved: " + mFile.toString());
+            mData = new byte[0];
+        }
+
+        ImageSaver(Image image, byte[] data, File file) {
+            mImage = image;
+            mData = data;
+            mFile = file;
+            Log.d(TAG, "Saved: " + mFile.toString() + ", mData length: " + mData.length);
         }
 
         @Override
         public void run() {
             ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
             byte[] bytes = new byte[buffer.remaining()];
-            Log.d(TAG, "ImageSaver: image length: " + bytes.length
-                    + ", format: " +  mImage.getFormat() + ", w " + mImage.getWidth()
+            Log.d(TAG, "ImageSaver: image bytes length: " + bytes.length
+                    + ", format: " + mImage.getFormat() + ", w " + mImage.getWidth()
                     + ", h " + mImage.getHeight());
             buffer.get(bytes);
             FileOutputStream output = null;
+            if (mData.length != 0) {
+                bytes = mData;
+            }
             try {
                 output = new FileOutputStream(mFile);
                 output.write(bytes);

@@ -30,9 +30,14 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true">
+        <TextureView
+            android:id="@+id/sub_cam_view"
+            android:layout_width="240dp"
+            android:layout_height="320dp"
+            android:visibility="gone"/>
 
         <com.example.android.camera2basic.gles.CameraGLSurfaceView
-            android:id="@+id/sub_cam_view"
+            android:id="@+id/gl_cam_view"
             android:layout_width="150dp"
             android:layout_height="200dp"
             android:visibility="gone"/>
