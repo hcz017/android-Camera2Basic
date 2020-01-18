@@ -198,7 +198,7 @@ public class Camera2BasicFragment extends Fragment
             mCameraDevice = cameraDevice;
 
             // to ensure surface available
-            if (Config.SecCamCfg.ADD_SEC_PREVIEW){
+            if (Config.AuxCamCfg.ADD_AUX_CAM_PREVIEW){
                 try{
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -463,7 +463,7 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mCameraGLView = view.findViewById(R.id.sub_cam_view);
-        if (Config.SecCamCfg.ADD_SEC_PREVIEW) {
+        if (Config.AuxCamCfg.ADD_AUX_CAM_PREVIEW) {
             mCameraGLView.setVisibility(View.VISIBLE);
         }
     }
@@ -573,7 +573,7 @@ public class Camera2BasicFragment extends Fragment
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mBackgroundHandler);
 
-                if (Config.MainCamCfg.TAKE_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
+                if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
                     int secFormat = Config.MainCamCfg.SEC_FORMAT;
                     Size secLargest = Collections.max(
                             Arrays.asList(map.getOutputSizes(secFormat)),
@@ -782,9 +782,9 @@ public class Camera2BasicFragment extends Fragment
             }
 
             List<Surface> outputs;
-            if (Config.MainCamCfg.TAKE_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
+            if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT){
                 outputs = Arrays.asList(surface, mImageReader.getSurface(), mSecImageReader.getSurface());
-            } else if (Config.SecCamCfg.ADD_SEC_PREVIEW) {
+            } else if (Config.AuxCamCfg.ADD_AUX_CAM_PREVIEW) {
                 SurfaceTexture subTexture = mCameraGLView.getSurfaceTexture();
                 assert subTexture != null;
                 // We configure the size of default buffer to be the size of camera preview we want.
@@ -926,7 +926,7 @@ public class Camera2BasicFragment extends Fragment
             final CaptureRequest.Builder captureBuilder =
                     mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(mImageReader.getSurface());
-            if (Config.MainCamCfg.TAKE_SEC_FORMAT){
+            if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT){
                 captureBuilder.addTarget(mSecImageReader.getSurface());
             }
 

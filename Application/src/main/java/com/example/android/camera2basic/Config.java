@@ -25,15 +25,17 @@ public class Config {
 
     static class MainCamCfg {
         // whether to take a raw pic when taking pic
-        public static boolean TAKE_SEC_FORMAT = false;
+        public static boolean SNAPSHOT_SEC_FORMAT = false;
         // whether to get raw data when init preview
         public static boolean PREVIEW_SEC_FORMAT = false;
 
         public static int SEC_FORMAT = ImageFormat.RAW_SENSOR;
     }
 
-    static class SecCamCfg {
-        // show a second preview on screen, currently it for main camera not the aux camera
-        public static boolean ADD_SEC_PREVIEW = true;
+    static class AuxCamCfg {
+        // show a second preview on screen,
+        // todo: currently it's for main camera to show another preview on gl surface view
+        //  NOT the aux camera
+        public static boolean ADD_AUX_CAM_PREVIEW = true;
     }
 }
