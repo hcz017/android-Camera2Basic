@@ -27,6 +27,7 @@ import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -51,8 +52,10 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Size;
+import android.util.SizeF;
 import android.util.SparseIntArray;
 import android.view.LayoutInflater;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -291,6 +294,9 @@ public class Camera2BasicFragment extends Fragment
         }
 
     };
+
+    private MyOrientationEventListener mOrientationEventListener;
+
     /**
      * {@link CaptureRequest.Builder} for the camera preview
      */
@@ -502,10 +508,13 @@ public class Camera2BasicFragment extends Fragment
         } else {
             mTextureView.setSurfaceTextureListener(mSurfaceTextureListener);
         }
+        mOrientationEventListener = new MyOrientationEventListener(getContext());
+//        mOrientationEventListener.enable();
     }
 
     @Override
     public void onPause() {
+//        mOrientationEventListener.disable();
         closeCamera();
         stopBackgroundThread();
         super.onPause();
@@ -548,8 +557,22 @@ public class Camera2BasicFragment extends Fragment
             for (String cameraId : manager.getCameraIdList()) {
                 // override camera id for debug
                 cameraId = Config.MAIN_CAM_ID;
-                CameraCharacteristics characteristics
-                        = manager.getCameraCharacteristics(cameraId);
+                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+                Size pixelArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_PIXEL_ARRAY_SIZE);
+                float[] focalLength = characteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+                SizeF physicalSize = characteristics.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
+                float pixelSize = physicalSize.getWidth() / pixelArraySize.getWidth();
+                Log.d(TAG, "cameraId:" + cameraId + ", SENSOR_INFO_PIXEL_ARRAY_SIZE: " + pixelArraySize);
+                Log.d(TAG, "cameraId:" + cameraId + ", LENS_INFO_AVAILABLE_FOCAL_LENGTHS: " + focalLength[0]);
+                Log.d(TAG, "cameraId:" + cameraId + ", pixel size: " + pixelSize);
+                Log.d(TAG, "cameraId:" + cameraId + ", pixel array size: " +
+                        pixelArraySize.getWidth() + " " + pixelArraySize.getHeight());
+
+                Rect activeArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+                Log.d(TAG, "cameraId:" + cameraId + ", active_array_size l t w h: " +
+                        activeArraySize.left + " " + activeArraySize.top + " " +
+                        activeArraySize.width() + " " + activeArraySize.height());
+
 
                 Log.d(TAG, "setUpCameraOutputs: is RAW output support: " +
                         CameraUtil.isCapSupport(characteristics, CameraUtil.RWA_CAP));
@@ -1174,6 +1197,48 @@ public class Camera2BasicFragment extends Fragment
                                 }
                             })
                     .create();
+        }
+    }
+
+    class MyOrientationEventListener extends OrientationEventListener {
+
+        private static final int SENSOR_ANGLE = 10;
+
+        public MyOrientationEventListener(Context context) {
+            super(context);
+        }
+
+        @Override
+        public void onOrientationChanged(int orientation) {
+            Log.d(TAG, "onOrientationChanged orientation=" + orientation);
+            if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) {
+                return;  //手机平放时，检测不到有效的角度
+            }
+
+            //下面是手机旋转准确角度与四个方向角度（0 90 180 270）的转换
+            if (orientation > 360 - SENSOR_ANGLE || orientation < SENSOR_ANGLE) {
+                orientation = 0;
+            } else if (orientation > 90 - SENSOR_ANGLE && orientation < 90 + SENSOR_ANGLE) {
+                orientation = 90;
+            } else if (orientation > 180 - SENSOR_ANGLE && orientation < 180 + SENSOR_ANGLE) {
+                orientation = 180;
+            } else if (orientation > 270 - SENSOR_ANGLE && orientation < 270 + SENSOR_ANGLE) {
+                orientation = 270;
+            } else {
+                return;
+            }
+            Log.d(TAG, "orientation: " + orientation);
+            try {
+                if (mPreviewRequestBuilder != null && mCaptureSession != null) {
+                    mPreviewRequestBuilder.set(CaptureRequest.JPEG_ORIENTATION,
+                            orientation);
+                    mPreviewRequest = mPreviewRequestBuilder.build();
+                    mCaptureSession.setRepeatingRequest(mPreviewRequest,
+                            mCaptureCallback, mBackgroundHandler);
+                }
+            } catch (CameraAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
 
