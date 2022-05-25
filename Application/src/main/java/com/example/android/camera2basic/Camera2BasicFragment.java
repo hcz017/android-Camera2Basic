@@ -60,6 +60,7 @@ import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.android.camera2basic.gles.CameraGLSurfaceView;
@@ -172,6 +173,7 @@ public class Camera2BasicFragment extends Fragment
     private AutoFitTextureView mTextureView;
     private TextureView mSubTextureView;
     private CameraGLSurfaceView mCameraGLView;
+    private TextView mViewHintText;
 
     /**
      * A {@link CameraCaptureSession } for camera preview.
@@ -478,13 +480,16 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.picture).setOnClickListener(this);
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
+        mViewHintText = view.findViewById(R.id.view_hint);
         mSubTextureView = view.findViewById(R.id.sub_cam_view);
         if (Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
             mSubTextureView.setVisibility(View.VISIBLE);
+            mViewHintText.setText("mSubTextureView");
         }
         mCameraGLView = view.findViewById(R.id.gl_cam_view);
         if (Config.GLSurfaceCfg.ADD_GL_SURFACE_PREVIEW) {
             mCameraGLView.setVisibility(View.VISIBLE);
+            mViewHintText.setText("mCameraGLView");
         }
     }
 
