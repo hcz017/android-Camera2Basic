@@ -4,8 +4,6 @@ import android.graphics.ImageFormat;
 import android.util.Size;
 
 public class Config {
-    public static String BACK_CAM_ID = "0";
-    public static String FRONT_CAM_ID = "1";
     public static String MAIN_CAM_ID = "0";
 
     // use fixed preview size @see #getFixedPreviewSize()

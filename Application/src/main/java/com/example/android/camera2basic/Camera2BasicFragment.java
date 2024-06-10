@@ -587,7 +587,10 @@ public class Camera2BasicFragment extends Fragment
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
                 if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
-//                    continue;
+                    mCameraGLView.setBackCamera(false);
+                    mCameraGLView.setFilpV(Config.GLSurfaceCfg.FLIP_GL_PREVIEW);
+                } else {
+                    mCameraGLView.setBackCamera(true);
                 }
 
                 StreamConfigurationMap map = characteristics.get(
@@ -734,10 +737,6 @@ public class Camera2BasicFragment extends Fragment
             }
             Log.d(TAG, "openCamera: camera id: " + mCameraId);
             manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
-            mCameraGLView.setBackCamera(mCameraId.equals(Config.BACK_CAM_ID));
-            if (mCameraId.equals(Config.FRONT_CAM_ID)) {
-                mCameraGLView.setFilpV(Config.GLSurfaceCfg.FLIP_GL_PREVIEW);
-            }
 
         } catch (CameraAccessException e) {
             e.printStackTrace();
