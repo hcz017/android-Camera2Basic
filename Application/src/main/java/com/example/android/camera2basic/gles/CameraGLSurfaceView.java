@@ -31,6 +31,11 @@ public class CameraGLSurfaceView extends GLSurfaceView implements CameraGLSurfac
         return mRender.getSurfaceTexture();
     }
 
+    public CameraGLSurfaceRender getGLRender() {
+        return mRender;
+    }
+
+
     @Override
     public void onRequestRender() {
         requestRender();

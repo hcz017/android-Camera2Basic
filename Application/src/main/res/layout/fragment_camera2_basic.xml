@@ -30,20 +30,33 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true">
+
         <TextureView
             android:id="@+id/sub_cam_view"
             android:layout_width="240dp"
             android:layout_height="320dp"
-            android:visibility="gone"/>
+            android:visibility="visible" />
+
+        <TextView
+            android:id="@+id/view_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true">
 
         <com.example.android.camera2basic.gles.CameraGLSurfaceView
             android:id="@+id/gl_cam_view"
             android:layout_width="150dp"
             android:layout_height="200dp"
-            android:visibility="gone"/>
+            android:visibility="visible" />
 
         <TextView
-            android:id="@+id/view_hint"
+            android:id="@+id/gl_view_txt_hint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </FrameLayout>
@@ -74,5 +87,6 @@
             android:src="@drawable/ic_action_info" />
 
     </FrameLayout>
+
 
 </RelativeLayout>

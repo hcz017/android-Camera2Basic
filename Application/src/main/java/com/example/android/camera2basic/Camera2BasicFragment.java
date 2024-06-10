@@ -63,6 +63,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.android.camera2basic.gles.CameraGLSurfaceRender;
 import com.example.android.camera2basic.gles.CameraGLSurfaceView;
 
 import java.io.File;
@@ -173,7 +174,9 @@ public class Camera2BasicFragment extends Fragment
     private AutoFitTextureView mTextureView;
     private TextureView mSubTextureView;
     private CameraGLSurfaceView mCameraGLView;
+    private CameraGLSurfaceRender mGLRender;
     private TextView mViewHintText;
+    private TextView mGLViewTextHint;
 
     /**
      * A {@link CameraCaptureSession } for camera preview.
@@ -284,11 +287,13 @@ public class Camera2BasicFragment extends Fragment
             mFile = new File(getActivity().getExternalFilesDir(null), i++ + "pic." + secFormat);
             Image image = reader.acquireNextImage();
             byte[] data;
-            data = CameraUtil.YUV_420_888toNV21(image);
+            data = CameraUtil.getNV21DataFromImage(image);
             Log.d(TAG, "onImageAvailable: sec image data length: " + data.length);
             if (Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
                 mBackgroundHandler.post(new DisplayDepth(data, reader.getWidth(), reader.getHeight(),
-                        new Surface(mSubTextureView.getSurfaceTexture())));
+                        new Surface(mSubTextureView.getSurfaceTexture()), new Surface(mCameraGLView.getSurfaceTexture()), mGLRender));
+//                mBackgroundHandler.post(new DisplayDepth(data, reader.getWidth(), reader.getHeight(),
+//                        new Surface(mCameraGLView.getSurfaceTexture())));
                 image.close();
             } else if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT) {
                 mBackgroundHandler.post(new ImageSaver(image, data, mFile));
@@ -481,6 +486,7 @@ public class Camera2BasicFragment extends Fragment
         view.findViewById(R.id.info).setOnClickListener(this);
         mTextureView = (AutoFitTextureView) view.findViewById(R.id.texture);
         mViewHintText = view.findViewById(R.id.view_hint);
+        mGLViewTextHint = view.findViewById(R.id.gl_view_txt_hint);
         mSubTextureView = view.findViewById(R.id.sub_cam_view);
         if (Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
             mSubTextureView.setVisibility(View.VISIBLE);
@@ -489,7 +495,10 @@ public class Camera2BasicFragment extends Fragment
         mCameraGLView = view.findViewById(R.id.gl_cam_view);
         if (Config.GLSurfaceCfg.ADD_GL_SURFACE_PREVIEW) {
             mCameraGLView.setVisibility(View.VISIBLE);
-            mViewHintText.setText("mCameraGLView");
+            mGLViewTextHint.setText("mCameraGLView");
+        }
+        if (mCameraGLView != null) {
+            mGLRender = mCameraGLView.getGLRender();
         }
     }
 
@@ -824,15 +833,15 @@ public class Camera2BasicFragment extends Fragment
 
             List<Surface> outputs;
             if (Config.MainCamCfg.SNAPSHOT_SEC_FORMAT || Config.MainCamCfg.PREVIEW_SEC_FORMAT) {
-                outputs = Arrays.asList(surface, mImageReader.getSurface(), mSecImageReader.getSurface());
-            } else if (Config.GLSurfaceCfg.ADD_GL_SURFACE_PREVIEW) {
+//                outputs = Arrays.asList(surface, mImageReader.getSurface(), mSecImageReader.getSurface());
+//            } else if (Config.GLSurfaceCfg.ADD_GL_SURFACE_PREVIEW) {
                 SurfaceTexture subTexture = mCameraGLView.getSurfaceTexture();
                 assert subTexture != null;
                 // We configure the size of default buffer to be the size of camera preview we want.
                 subTexture.setDefaultBufferSize(480, 360);
                 Surface subSurface = new Surface(subTexture);
                 mPreviewRequestBuilder.addTarget(subSurface);
-                outputs = Arrays.asList(surface, subSurface, mImageReader.getSurface());
+                outputs = Arrays.asList(surface, mImageReader.getSurface(), subSurface, mSecImageReader.getSurface());
             } else {
                 outputs = Arrays.asList(surface, mImageReader.getSurface());
             }

@@ -4,7 +4,7 @@ import android.graphics.ImageFormat;
 import android.util.Size;
 
 public class Config {
-    public static String MAIN_CAM_ID = "0";
+    public static String MAIN_CAM_ID = "2";
 
     // use fixed preview size @see #getFixedPreviewSize()
     public static boolean USE_FIXED_PRE_SIZE = false;
@@ -36,7 +36,7 @@ public class Config {
     static class GLSurfaceCfg {
         // show a gl surface view preview on screen
         // Todo:: it works when #MainCamCfg.SNAPSHOT_SEC_FORMAT and #MainCamCfg.PREVIEW_SEC_FORMAT both false
-        public static boolean ADD_GL_SURFACE_PREVIEW = false;
+        public static boolean ADD_GL_SURFACE_PREVIEW = true;
         // works when open front camera #Config.FRONT_CAM_ID
         public static final boolean FLIP_GL_PREVIEW = true;
     }

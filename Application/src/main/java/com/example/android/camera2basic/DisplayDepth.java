@@ -12,6 +12,8 @@ import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.view.Surface;
 
+import com.example.android.camera2basic.gles.CameraGLSurfaceRender;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -19,17 +21,21 @@ public class DisplayDepth implements Runnable {
     private static final String TAG = "DisplayDepth";
     private byte[] mData;
     private Surface mSurface;
+    private Surface mGLSurface;
     private Paint bitmapPaint;
     private int mHeight;
     private int mWidth;
+    CameraGLSurfaceRender mGLRender;
 
-    DisplayDepth(byte[] data, int width, int height, Surface surface) {
+    DisplayDepth(byte[] data, int width, int height, Surface surface, Surface glSurface, CameraGLSurfaceRender glrender) {
         mHeight = height;
         mWidth = width;
         bitmapPaint = new Paint();
         bitmapPaint.setColor(Color.BLACK);
         mData = data;
         mSurface = surface;
+        mGLSurface = glSurface;
+        mGLRender = glrender;
     }
 
     @Override
@@ -52,13 +58,25 @@ public class DisplayDepth implements Runnable {
             Rect rect = new Rect(0, 0, mWidth, mHeight);//
             Canvas canvas = mSurface.lockCanvas(rect);
             Matrix matrix = canvas.getMatrix();
-            float ratio = (float)canvas.getHeight() / bitmap.getHeight();
+            float ratio = (float) canvas.getHeight() / bitmap.getHeight();
             matrix.postScale(ratio, ratio);
             canvas.setMatrix(matrix);
             canvas.drawColor(Color.BLUE);
             canvas.drawBitmap(bitmap, 0, 0, bitmapPaint);
             mSurface.unlockCanvasAndPost(canvas);
             mSurface.release();
+            if (mGLRender != null) {
+                mGLRender.setImageBitMap(bitmap);
+            }
+//            Canvas glcanvas = mGLSurface.lockCanvas(rect);
+//            matrix = glcanvas.getMatrix();
+//            ratio = (float)glcanvas.getHeight() / bitmap.getHeight();
+//            matrix.postScale(ratio, ratio);
+//            glcanvas.setMatrix(matrix);
+//            glcanvas.drawColor(Color.RED);
+//            glcanvas.drawBitmap(bitmap, 0, 0, bitmapPaint);
+//            mGLSurface.unlockCanvasAndPost(glcanvas);
+//            mGLSurface.release();
             baos.close();
         } catch (IOException e) {
             e.printStackTrace();

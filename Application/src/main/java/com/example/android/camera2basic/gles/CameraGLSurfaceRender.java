@@ -1,9 +1,17 @@
 package com.example.android.camera2basic.gles;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.util.Log;
+import android.view.Surface;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -57,6 +65,7 @@ public class CameraGLSurfaceRender extends GLAbstractRender {
     private int av_Position;
     private int af_Position;
     private int s_Texture;
+    private Bitmap mBitmap;
 
     public CameraGLSurfaceRender(Context context, CameraGLSufaceRenderCallback mRenderCallback) {
         super(context);
@@ -113,6 +122,7 @@ public class CameraGLSurfaceRender extends GLAbstractRender {
 
     @Override
     protected void onDraw() {
+        Log.d("render", "onDraw: ");
         if (mSurfaceTexture != null) {
             mSurfaceTexture.updateTexImage();
         }
@@ -138,9 +148,30 @@ public class CameraGLSurfaceRender extends GLAbstractRender {
         GLES20.glDisableVertexAttribArray(av_Position);
         GLES20.glDisableVertexAttribArray(af_Position);
 
-        if (mRenderCallback != null) {
-            mRenderCallback.onDraw();
-        }
+//        if (mRenderCallback != null) {
+//            mRenderCallback.onDraw();
+//        }
+
+//        if (mBitmap != null) {
+//            Rect rect = new Rect(0, 0, 480, 640);//
+//            Surface surface = new Surface(mSurfaceTexture);
+//            Canvas glcanvas = surface.lockCanvas(rect);
+//            Matrix matrix = glcanvas.getMatrix();
+//            matrix = glcanvas.getMatrix();
+//            float ratio = (float) glcanvas.getHeight() / mBitmap.getHeight();
+//            matrix.postScale(ratio, ratio);
+//            glcanvas.setMatrix(matrix);
+//            glcanvas.drawColor(Color.RED);
+//            Paint bitmapPaint = new Paint();
+//            bitmapPaint.setColor(Color.BLACK);
+//            glcanvas.drawBitmap(mBitmap, 0, 0, bitmapPaint);
+//            surface.unlockCanvasAndPost(glcanvas);
+//            surface.release();
+//        }
+    }
+
+    public void setImageBitMap(Bitmap bitmap) {
+        mBitmap = bitmap;
     }
 
     @Override
