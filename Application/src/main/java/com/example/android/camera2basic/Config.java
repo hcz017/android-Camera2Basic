@@ -11,7 +11,9 @@ public class Config {
     // use fixed capture picture size @see #getFixedPictureSize()
     public static boolean USE_FIXED_PIC_SIZE = false;
 
+    // if open front camera, you may need set this to 270
     public static final int DEPTH_PREVIEW_ROTATE = 90;
+    // if open front camera, you may need set this to true
     public static final boolean FLIP_PREVIEW = false;
 
     public static Size getFixedPreviewSize() {

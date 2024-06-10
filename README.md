@@ -29,6 +29,7 @@ mCameraDevice.createCaptureSession()
 
 ![](./screenshots/copy_main_preview.png)
 参考代码： https://github.com/hcz017/android-Camera2Basic/tree/add_another_main_preview
+
 ## 2.2 添加另一个格式的预览数据并显示
 
 上一种情况我们直接从view 种拿到surface，并没有对这一路预览数据的格式做设置（默认为PRIVATE 格式），如果我们有格式的要求，就需要通过ImagerReader 来设置。
@@ -64,6 +65,7 @@ drawFrame(mSurfaceTexture, holder.width, holder.height,
 
 ![](./screenshots/mirror_flip_front_preview.png)
 参考代码： https://github.com/hcz017/android-Camera2Basic/tree/mirror_flip_front_camera_preview
+
 # 4. 问题
 
 在onImageAvailable 回调中，用完image 后及时close image。另外如果时多线程的话，注意view destory 和停止渲染预览的先后关系。有可能会出现view 已经销毁了但是还在试图渲染新的图像，此时会报错。
