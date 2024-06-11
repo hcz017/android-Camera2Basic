@@ -27,7 +27,7 @@ public class CameraGLSurfaceView extends GLSurfaceView implements CameraGLSurfac
     }
 
     public SurfaceTexture getSurfaceTexture() {
-        assert (mRender.getSurfaceTexture() == null);
+//        assert (mRender.getSurfaceTexture() == null);
         return mRender.getSurfaceTexture();
     }
 
